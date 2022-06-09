@@ -49,7 +49,7 @@ def parse_traceml(filename: str, node_names: dict) -> dict:
         if not "tid" in node.attrib:
             continue
 
-        thread_id = int(node.attrib["tid"])
+        thread_id = int(node.attrib["tid"]) - 1
 
         if node.tag == "task_begin":
             task_id = node.attrib["id"]

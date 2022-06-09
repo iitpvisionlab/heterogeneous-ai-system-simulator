@@ -19,6 +19,7 @@ class Simulator:
         distributions: dict,
         nn_cache_type: NNCacheType,
         new_module_enabled: bool,
+        use_async: bool
     ):
         self.env = simpy.Environment()
         self.cpu = simpy.Resource(self.env, capacity=cpu_core_count)
@@ -29,6 +30,7 @@ class Simulator:
         self.nn_cache_type = nn_cache_type
         self.nn_cache_mutex = simpy.Resource(self.env, capacity=1)
         self.new_module_enabled = new_module_enabled
+        self.use_async = use_async
 
     def run(self):
         self.env.run()

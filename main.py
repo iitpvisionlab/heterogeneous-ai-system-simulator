@@ -31,6 +31,7 @@ def _main():
     parser.add_argument("--uniform", action="store_true")
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--enable-new-module", action="store_true")
+    parser.add_argument("--use-async", action="store_true")
     parser.add_argument(
         "--nn-cache",
         type=lambda x: NNCacheType[x],
@@ -63,6 +64,7 @@ def _main():
             distributions=distributions,
             nn_cache_type=args.nn_cache,
             new_module_enabled=args.enable_new_module,
+            use_async = args.use_async
         )
         streams = [
             VideoStream(simulator, total_frames=args.total_frames)

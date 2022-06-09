@@ -43,11 +43,11 @@ class VideoStreamFlowGraph:
                 "detector_result_join",
                 buffer_size=3 if simulator.new_module_enabled else 2,
             ),
-            "gate_frame_selector": FrameSelectorNode(
-                simulator, "gate_frame_selector", 1
-            ),
-            "gate_state_detector": FunctionNode(simulator, "gate_state_detector"),
-            "gate_rebroadcaster": FunctionNode(simulator, "gate_rebroadcaster"),
+            # "gate_frame_selector": FrameSelectorNode(
+            #     simulator, "gate_frame_selector", 1
+            # ),
+            # "gate_state_detector": FunctionNode(simulator, "gate_state_detector"),
+            # "gate_rebroadcaster": FunctionNode(simulator, "gate_rebroadcaster"),
         }
 
         self.nodes["decoder"].add_successor(self.nodes["frame_corrector"])
@@ -76,22 +76,22 @@ class VideoStreamFlowGraph:
             self.nodes["detector_result_join"]
         )
 
-        if simulator.new_module_enabled:
-            self.nodes["frame_corrector"].add_successor(
-                self.nodes["gate_frame_selector"]
-            )
-            self.nodes["gate_frame_selector"].add_successor(
-                0, self.nodes["gate_state_detector"]
-            )
-            self.nodes["gate_frame_selector"].add_successor(
-                1, self.nodes["gate_rebroadcaster"]
-            )
-            self.nodes["gate_state_detector"].add_successor(
-                self.nodes["gate_rebroadcaster"]
-            )
-            self.nodes["gate_rebroadcaster"].add_successor(
-                self.nodes["detector_result_join"]
-            )
+        # if simulator.new_module_enabled:
+        #     self.nodes["frame_corrector"].add_successor(
+        #         self.nodes["gate_frame_selector"]
+        #     )
+        #     self.nodes["gate_frame_selector"].add_successor(
+        #         0, self.nodes["gate_state_detector"]
+        #     )
+        #     self.nodes["gate_frame_selector"].add_successor(
+        #         1, self.nodes["gate_rebroadcaster"]
+        #     )
+        #     self.nodes["gate_state_detector"].add_successor(
+        #         self.nodes["gate_rebroadcaster"]
+        #     )
+        #     self.nodes["gate_rebroadcaster"].add_successor(
+        #         self.nodes["detector_result_join"]
+        #     )
 
     def start(self):
         for node in self.nodes.values():
@@ -114,8 +114,17 @@ class VideoStream:
     def _process(self):
         self.start_time = self.simulator.now()
 
-        while self.process_frames != self.total_frames:
-            yield self.simulator.env.process(self._process_single_frame())
+        if not self.simulator.use_async:
+            while self.process_frames != self.total_frames:
+                yield self.simulator.env.process(self._process_single_frame())
+        else:
+            tasks = [Store(self.simulator.env)] * self.total_frames
+            for task in tasks:
+                self.flow_graph.nodes["decoder"].task_queue.put(task)
+
+            for task in tasks:
+                yield task.get()
+                self.process_frames += 1
 
         self.finish_time = self.simulator.now()
 
